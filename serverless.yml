@@ -5,6 +5,7 @@ provider:
   name: aws
   runtime: nodejs14.x
   lambdaHashingVersion: 20201221
+  #region: eu-west-2
 
   iam:
     role:
@@ -53,7 +54,7 @@ functions:
           path: /review/{id}
           method: delete
   listReview:
-    handler: src/handlers.listReview
+    handler: src/handlers.listReviews
     events:
       - httpApi:
           path: /reviews

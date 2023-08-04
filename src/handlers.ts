@@ -1,8 +1,8 @@
 import {APIGatewayProxyEvent, APIGatewayProxyResult, S3Event} from "aws-lambda";
-import AWS from "aws-sdk";
-import { v4 } from "uuid";
+import AWS, {S3} from "aws-sdk";
+import {v4} from "uuid";
 import * as yup from "yup";
-import { S3Client, HeadObjectCommand } from '@aws-sdk/client-s3';
+import { parseStream } from 'fast-csv';
 
 const docClient = new AWS.DynamoDB.DocumentClient();
 const tableName = "ReviewsTable";
@@ -16,26 +16,22 @@ const schema = yup.object().shape({
   tyReview: yup.string().notRequired()
 });
 
-const s3 = new S3Client({ region: process.env.AWS_REGION });
+const s3 = new S3({ region: process.env.AWS_REGION });
 
-export const fetchMappings = async (event: S3Event): Promise<string | undefined> => {
-  // Get the object from the event and show its content type
-  const bucket = event.Records[0].s3.bucket.name;
-  const key = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, ' '));
-  const params = {
-    Bucket: bucket,
-    Key: key,
-  };
-  try {
-    const { ContentType } = await s3.send(new HeadObjectCommand(params));
-    console.log('CONTENT TYPE:', ContentType);
-    return ContentType;
-  } catch (err) {
-    console.log(err);
-    const message = `Error getting object ${key} from bucket ${bucket}. Make sure they exist and your bucket is in the same region as this function.`;
-    console.log(message);
-    throw new Error(message);
-  }
+export const fetchMappings = async (event: S3Event)=> {
+  event.Records.map((record) => {
+    const Bucket = record.s3.bucket.name;
+    const Key = decodeURIComponent(record.s3.object.key.replace(/\+/g, ' '));
+    const params = {Bucket, Key};
+    console.log("S3 event received", params);
+
+    const stream = s3.getObject(params).createReadStream();
+
+    parseStream(stream)
+        .on('error', error => console.error(error))
+        .on('data', row => console.log(row))
+        .on('end', (rowCount: number) => console.log(`Parsed ${rowCount} rows`));
+  });
 };
 
 export const createReview = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
