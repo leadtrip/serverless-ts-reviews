@@ -1,0 +1,75 @@
+service: reviews-api
+
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - "dynamodb:PutItem"
+            - "dynamodb:GetItem"
+            - "dynamodb:DeleteItem"
+            - "dynamodb:Scan"
+          Resource:
+            - { "Fn::GetAtt": ["ReviewsTable", "Arn"] }
+
+
+functions:
+  createReview:
+    handler: src/handlers.createReview
+    events:
+      - httpApi:
+          path: /review
+          method: post
+  getReview:
+    handler: src/handlers.getReview
+    events:
+      - httpApi:
+          path: /review/{id}
+          method: get
+  updateReview:
+    handler: src/handlers.updateReview
+    events:
+      - httpApi:
+          path: /review/{id}
+          method: put
+  deleteReview:
+    handler: src/handlers.deleteReview
+    events:
+      - httpApi:
+          path: /review/{id}
+          method: delete
+  listReview:
+    handler: src/handlers.listReview
+    events:
+      - httpApi:
+          path: /reviews
+          method: get
+
+plugins:
+  - serverless-plugin-typescript
+
+
+resources:
+  Resources:
+    ReviewsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ReviewsTable
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        AttributeDefinitions:
+          - AttributeName: reviewId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: reviewId
+            KeyType: HASH
+#    MappingsBucket:
+#      Type: AWS::S3::Bucket
+#      Properties:
+#        BucketName: ty-mappings-bucket
