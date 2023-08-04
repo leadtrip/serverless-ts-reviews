@@ -18,6 +18,11 @@ provider:
             - "dynamodb:Scan"
           Resource:
             - { "Fn::GetAtt": ["ReviewsTable", "Arn"] }
+        - Effect: Allow
+          Action:
+            - 's3:GetObject'
+          Resource:
+            - 'arn:aws:s3:::ty-mappings-bucket/*'
 
 
 functions:

@@ -19,19 +19,33 @@ const schema = yup.object().shape({
 const s3 = new S3({ region: process.env.AWS_REGION });
 
 export const fetchMappings = async (event: S3Event)=> {
-  event.Records.map((record) => {
-    const Bucket = record.s3.bucket.name;
-    const Key = decodeURIComponent(record.s3.object.key.replace(/\+/g, ' '));
+
+    const rec0 = event.Records[0];
+    const Bucket = rec0.s3.bucket.name;
+    const Key = decodeURIComponent(rec0.s3.object.key.replace(/\+/g, ' '));
     const params = {Bucket, Key};
     console.log("S3 event received", params);
 
-    const stream = s3.getObject(params).createReadStream();
+    const csvFile = s3.getObject(params).createReadStream();
 
-    parseStream(stream)
-        .on('error', error => console.error(error))
-        .on('data', row => console.log(row))
-        .on('end', (rowCount: number) => console.log(`Parsed ${rowCount} rows`));
-  });
+    let parserPromise = new Promise((resolve, reject) => {
+          parseStream(csvFile, { headers: true })
+          .on("data", function (data) {
+            console.log('Data parsed: ', data);
+          })
+          .on("end", function () {
+            resolve("csv parse process finished");
+          })
+          .on("error", function () {
+            reject("csv parse process failed");
+          });
+    });
+
+    try {
+      await parserPromise;
+    } catch (error) {
+      console.log("Get Error: ", error);
+    }
 };
 
 export const createReview = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
