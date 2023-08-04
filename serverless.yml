@@ -20,6 +20,14 @@ provider:
 
 
 functions:
+  fetchMappings:
+    handler: src/handlers.fetchMappings
+    events:
+      - s3:
+          bucket: ty-mappings-bucket
+          event: s3:ObjectCreated:*
+          rules:
+            - suffix: .csv
   createReview:
     handler: src/handlers.createReview
     events:

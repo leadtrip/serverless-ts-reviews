@@ -1,7 +1,8 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
+import {APIGatewayProxyEvent, APIGatewayProxyResult, S3Event} from "aws-lambda";
 import AWS from "aws-sdk";
 import { v4 } from "uuid";
 import * as yup from "yup";
+import { S3Client, HeadObjectCommand } from '@aws-sdk/client-s3';
 
 const docClient = new AWS.DynamoDB.DocumentClient();
 const tableName = "ReviewsTable";
@@ -14,6 +15,28 @@ const schema = yup.object().shape({
   tyId: yup.string().required(),
   tyReview: yup.string().notRequired()
 });
+
+const s3 = new S3Client({ region: process.env.AWS_REGION });
+
+export const fetchMappings = async (event: S3Event): Promise<string | undefined> => {
+  // Get the object from the event and show its content type
+  const bucket = event.Records[0].s3.bucket.name;
+  const key = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, ' '));
+  const params = {
+    Bucket: bucket,
+    Key: key,
+  };
+  try {
+    const { ContentType } = await s3.send(new HeadObjectCommand(params));
+    console.log('CONTENT TYPE:', ContentType);
+    return ContentType;
+  } catch (err) {
+    console.log(err);
+    const message = `Error getting object ${key} from bucket ${bucket}. Make sure they exist and your bucket is in the same region as this function.`;
+    console.log(message);
+    throw new Error(message);
+  }
+};
 
 export const createReview = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {

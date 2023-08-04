@@ -18,7 +18,7 @@ or
 yarn install
 ```
 
-If you're using AWS SSO to login install the cred helper and run once to generate the relevant section in your ~/.aws/credentials file (assumes use of default profile, change if not):
+If you're using AWS SSO to login install the [sso credential helper](https://www.npmjs.com/package/aws-sso-creds-helper) and run once to generate the relevant section in your ~/.aws/credentials file (assumes use of default profile, change if not):
 
 ```bash
 npm install -g aws-sso-creds-helper
