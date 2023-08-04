@@ -17,3 +17,10 @@ If you're using AWS SSO & the `~/.aws/config` file as opposed to the `credential
 npm install -g aws-sso-creds-helper
 ssocreds -p default
 ```
+
+Useful commands, if you have multiple AWS accounts you may need to suffix profile like `--aws-profile`
+```
+serverless deploy       -- entire CloudFormation
+serverless deploy function --function fetchMappings     -- just a function, much faster
+serverless remove       -- entire CloudFormation
+```
